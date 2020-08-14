@@ -43,7 +43,7 @@ extra800(){
     for bucket in $LIST_OF_BUCKETS;do
       BUCKET_POLICY=$($AWSCLI s3api get-bucket-policy --region $REGION --bucket $bucket $PROFILE_OPT 2>&1)
       if [[ $(echo "$BUCKET_POLICY" | grep AccessDenied) ]]; then
-        textFail "Access Denied Trying to get Bucket Policy for $bucket"
+        textFail "Access Denied Trying to get Policy for $bucket"
         continue
       fi
 
