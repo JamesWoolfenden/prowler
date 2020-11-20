@@ -38,12 +38,17 @@ check3x(){
       CLOUDWATCH_LOGGROUP_NAME=$(echo $group_obj_raw | jq -r '.[] | .CloudWatchLogsLogGroupArn|split(":")[6]')
       CLOUDWATCH_LOGGROUP_REGION=$(echo $group_obj_raw | jq -r '.[] | .CloudWatchLogsLogGroupArn|split(":")[3]')
       CLOUDWATCH_LOGGROUP_ACCOUNT=$(echo $group_obj_raw | jq -r '.[] | .CloudWatchLogsLogGroupArn|split(":")[4]')
-      if [ "$CLOUDWATCH_LOGGROUP_ACCOUNT" == "$CURRENT_ACCOUNT_ID" ];then
+
+      echo CLOUDWATCH_LOGGROUP_NAME: "$CLOUDWATCH_LOGGROUP_NAME"
+      echo CLOUDWATCH_LOGGROUP_REGION: "$CLOUDWATCH_LOGGROUP_REGION"
+      echo CLOUDWATCH_LOGGROUP_ACCOUNT: "$CLOUDWATCH_LOGGROUP_ACCOUNT"
+
+      if [ "$CLOUDWATCH_LOGGROUP_ACCOUNT" == "$CURRENT_ACCOUNT_ID" ];then # THIS WILL ALWAYS BE FALSE IF THERE IS MORE THAN ONE LOG GROUP
         # Filter control and whitespace from .metricFilters[*].filterPattern for easier matching later
         METRICFILTER_CACHE=$($AWSCLI logs describe-metric-filters --log-group-name "$CLOUDWATCH_LOGGROUP_NAME" $PROFILE_OPT --region "$CLOUDWATCH_LOGGROUP_REGION"|jq '.metricFilters|=map(.filterPattern|=gsub("[[:space:]]+"; " "))')
         METRICFILTER_SET=$(echo $METRICFILTER_CACHE | jq -r --arg re "$grep_filter" '.metricFilters[]|select(.filterPattern|test($re))|.filterName')
       fi
-      if [[ $METRICFILTER_SET ]];then
+      if [[ $METRICFILTER_SET ]];then # And so this will always be false, too
         for metric in $METRICFILTER_SET; do
           metric_name=$(echo $METRICFILTER_CACHE | jq -r --arg name $metric '.metricFilters[]|select(.filterName==$name)|.metricTransformations[0].metricName')
           HAS_ALARM_ASSOCIATED=$($AWSCLI cloudwatch describe-alarms $PROFILE_OPT --region "$CLOUDWATCH_LOGGROUP_REGION" --query 'MetricAlarms[?MetricName==`'"$metric_name"'`]' --output text)
@@ -53,21 +58,21 @@ check3x(){
             CHECK_WARN="$CHECK_WARN $CLOUDWATCH_LOGGROUP_NAME:$metric"
           fi
         done
-      elif [ "$CLOUDWATCH_LOGGROUP_ACCOUNT" == "$CURRENT_ACCOUNT_ID" ];then
+      elif [ "$CLOUDWATCH_LOGGROUP_ACCOUNT" == "$CURRENT_ACCOUNT_ID" ];then # And this will always be false (as above)
         CHECK_WARN="$CHECK_WARN $CLOUDWATCH_LOGGROUP_NAME"
       else
-        CHECK_CROSS_ACCOUNT_WARN="$CHECK_CROSS_ACCOUNT_WARN $CLOUDWATCH_LOGGROUP_NAME"
+        CHECK_CROSS_ACCOUNT_WARN="$CHECK_CROSS_ACCOUNT_WARN $CLOUDWATCH_LOGGROUP_NAME" # And so this value will always be set
       fi
     done
 
-    if [[ $CHECK_OK ]]; then
+    if [[ $CHECK_OK ]]; then # And then so will this
       for group in $CHECK_OK; do
         metric=${group#*:}
         group=${group%:*}
         textPass "CloudWatch group $group found with metric filter $metric and alarms set"
       done
     fi
-    if [[ $CHECK_WARN ]]; then
+    if [[ $CHECK_WARN ]]; then #.... And so will this
       for group in $CHECK_WARN; do
         case $group in
            *:*) metric=${group#*:}
@@ -78,9 +83,9 @@ check3x(){
         esac
       done
     fi
-    if [[ $CHECK_CROSS_ACCOUNT_WARN ]]; then
+    if [[ $CHECK_CROSS_ACCOUNT_WARN ]]; then # And so we will always arrive in this block
       for group in $CHECK_CROSS_ACCOUNT_WARN; do
-        textInfo "CloudWatch group $group is not in this account"
+        textInfo "CloudWatch group $group is not in this account" 
       done
     fi
   else
