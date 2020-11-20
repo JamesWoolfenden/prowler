@@ -21,9 +21,20 @@ check3x(){
   CURRENT_ACCOUNT_ID=$($AWSCLI sts $PROFILE_OPT get-caller-identity --region "$REGION" --query Account --output text)
   CLOUDWATCH_LOGGROUP=$($AWSCLI cloudtrail describe-trails $PROFILE_OPT --region "$REGION" --query 'trailList[*].CloudWatchLogsLogGroupArn' --output text| tr '\011' '\012' | awk -F: '{print $7}')
 
+  echo DESCRIBE_TRAILS_CACHE
+  echo "$DESCRIBE_TRAILS_CACHE" | jq
+  echo CLOUDWATCH_LOGGROUP
+  echo "'$CLOUDWATCH_LOGGROUP'"
+  echo CURRENT_ACCOUNT_ID
+  echo "'$CURRENT_ACCOUNT_ID'"
+  echo TRAIL_LIST
+  echo "'$TRAIL_LIST'"
+
   if [[ $CLOUDWATCH_LOGGROUP != "" ]]; then
     for group_obj_enc in $TRAIL_LIST; do
+      echo "in trail list iteration"
       group_obj_raw=$(echo $group_obj_enc | decode_report)
+      echo "$group_obj_raw" | jq
       CLOUDWATCH_LOGGROUP_NAME=$(echo $group_obj_raw | jq -r '.[] | .CloudWatchLogsLogGroupArn|split(":")[6]')
       CLOUDWATCH_LOGGROUP_REGION=$(echo $group_obj_raw | jq -r '.[] | .CloudWatchLogsLogGroupArn|split(":")[3]')
       CLOUDWATCH_LOGGROUP_ACCOUNT=$(echo $group_obj_raw | jq -r '.[] | .CloudWatchLogsLogGroupArn|split(":")[4]')
