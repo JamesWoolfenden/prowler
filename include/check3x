@@ -35,6 +35,7 @@ check3x(){
       echo "in trail list iteration"
       group_obj_raw=$(echo $group_obj_enc | decode_report)
       echo "$group_obj_raw" | jq
+
       CLOUDWATCH_LOGGROUP_NAME=$(echo $group_obj_raw | jq -r '.CloudWatchLogsLogGroupArn|split(":")[6]')
       CLOUDWATCH_LOGGROUP_REGION=$(echo $group_obj_raw | jq -r '.CloudWatchLogsLogGroupArn|split(":")[3]')
       CLOUDWATCH_LOGGROUP_ACCOUNT=$(echo $group_obj_raw | jq -r '.CloudWatchLogsLogGroupArn|split(":")[4]')
@@ -85,7 +86,7 @@ check3x(){
     fi
     if [[ $CHECK_CROSS_ACCOUNT_WARN ]]; then
       for group in $CHECK_CROSS_ACCOUNT_WARN; do
-        textInfo "CloudWatch group $group is not in this account"
+        textInfo "CloudWatch group $group is not in this account" 
       done
     fi
   else
